@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  Plus, Trash2, Edit3, Phone, Store,
-  X, Filter, ShoppingCart, Package, LayoutDashboard,
-  Star, Menu, MessageSquare, Home, LogIn, LogOut, PlusCircle, CheckCircle2,
-  ChevronRight, ArrowRight, MapPin, ShoppingBag, Save, AlertCircle, Tag, Globe, 
-  Upload, Loader2, Search, ArrowUpDown, TrendingUp, Layers, Eye, Share2,
+  Trash2, Edit3, Phone, Store,
+  X, ShoppingCart, Package, LayoutDashboard,
+  Menu, MessageSquare, Home, LogIn, PlusCircle,
+  ChevronRight, ArrowRight, ShoppingBag, Save, AlertCircle, Globe, 
+  Upload, Loader2, Search, TrendingUp, Eye, Share2,
   Heart, Moon, Sun, Zap, BarChart3, Clock
 } from 'lucide-react';
 
@@ -25,7 +25,7 @@ const App = () => {
   // Filtering, Sorting, Search
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('latest'); 
+  const [sortBy] = useState('latest'); 
   
   // Cart & Wishlist Logic
   const [cart, setCart] = useState([]);
@@ -176,15 +176,6 @@ const App = () => {
     } catch (err) { showAlert('Gagal', 'Gagal menyimpan ulasan.', 'error'); }
   };
 
-  const handleDeleteTestimonial = (id) => {
-    showConfirm('Hapus?', 'Hapus testimoni ini?', async () => {
-      if (supabase) {
-        await supabase.from('testimonials').delete().eq('id', id);
-        fetchData();
-      }
-    });
-  };
-
   const handleLogin = () => {
     if (loginData.user === 'arunika' && loginData.pass === 'arunika1234') {
       setIsLoggedIn(true);
@@ -236,8 +227,8 @@ const App = () => {
   }, [products, selectedCategory, searchQuery, sortBy]);
 
   const subtotal = cart.reduce((a, b) => a + (b.discount_price * b.qty), 0);
-  const discountAmount = (subtotal * appliedDiscount) / 100;
-  const grandTotal = subtotal - discountAmount;
+  const discountAmountValue = (subtotal * appliedDiscount) / 100;
+  const grandTotal = subtotal - discountAmountValue;
 
   // --- UI HELPERS ---
   const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
@@ -411,7 +402,7 @@ const App = () => {
                    </div>
                    <div className="space-y-3 mb-8">
                       <div className="flex justify-between text-sm opacity-60"><span>Subtotal</span><span>{formatIDR(subtotal)}</span></div>
-                      {appliedDiscount > 0 && <div className="flex justify-between text-sm text-green-500 font-bold"><span>Diskon {appliedDiscount}%</span><span>-{formatIDR(discountAmount)}</span></div>}
+                      {appliedDiscount > 0 && <div className="flex justify-between text-sm text-green-500 font-bold"><span>Diskon {appliedDiscount}%</span><span>-{formatIDR(discountAmountValue)}</span></div>}
                       <div className="flex justify-between font-black text-2xl pt-3 border-t"><span>Total</span><span className="text-[#A68966]">{formatIDR(grandTotal)}</span></div>
                    </div>
                    <button onClick={sendWhatsApp} className="w-full py-8 rounded-[2rem] bg-[#4A443F] text-white font-black text-xl flex items-center justify-center gap-4 shadow-xl active:scale-95 transition-all">
@@ -535,7 +526,7 @@ const App = () => {
                  <div className="space-y-2">
                     {[
                       {id:'overview', label:'Ringkasan Toko', icon: BarChart3},
-                      {id:'products', label:'Katalog Produk', icon: Package},
+                      {id:'products', label:'Manajemen Produk', icon: Package},
                       {id:'categories', label:'List Kategori', icon: Filter},
                       {id:'testimonials', label:'Koleksi Ulasan', icon: MessageSquare},
                       {id:'settings', label:'Identitas Website', icon: Globe}
