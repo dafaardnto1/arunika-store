@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Plus, Settings, Trash2, Edit3, Phone, Store,
   X, Filter, ShoppingCart, Package, LayoutDashboard,
-  Star, Menu, MessageSquare, Home, LogIn, LogOut, PlusCircle, CheckCircle2,
-  ChevronRight, ArrowRight, MapPin, Instagram, Facebook, ShoppingBag, Save
+  Star, Menu, MessageSquare, Home, LogIn, LogOut, PlusCircle,
+  ChevronRight, ArrowRight, MapPin, ShoppingBag, Save
 } from 'lucide-react';
 
 // --- KONFIGURASI DATABASE ---
-const SUPABASE_URL = 'https://mqenyookxpcqpbhezvlt.supabase.co'; 
-const SUPABASE_ANON_KEY = 'sb_publishable_d1ujW-SiX5aiLJDbVL5Yfw_kWoH7m6S'; 
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://mqenyookxpcqpbhezvlt.supabase.co'; 
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sb_publishable_d1ujW-SiX5aiLJDbVL5Yfw_kWoH7m6S'; 
 
 const App = () => {
   // --- STATE MANAGEMENT ---
@@ -54,7 +54,7 @@ const App = () => {
   }, []);
 
   // --- MENGAMBIL DATA DARI SUPABASE ---
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!supabase) return;
     try {
       const { data: p } = await supabase.from('products').select('*').order('id', { ascending: false });
@@ -73,11 +73,11 @@ const App = () => {
     } catch (err) {
       console.error("Error fetching data:", err);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     if (supabase) fetchData();
-  }, [supabase]);
+  }, [supabase, fetchData]);
 
   // --- FUNGSI ADMIN ---
   const saveProduct = async (obj) => {
@@ -166,17 +166,17 @@ const App = () => {
       {/* MODAL LOGIN */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
+          <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl animate-in zoom-in-95">
             <h2 className="text-2xl font-black mb-6 text-center text-[#4A443F]">Admin Login</h2>
             <div className="space-y-4">
               <input 
                 type="text" placeholder="Username" 
-                className="w-full p-4 rounded-xl border bg-[#FDFBF7] outline-none" 
+                className="w-full p-4 rounded-xl border bg-[#FDFBF7] outline-none focus:ring-2 focus:ring-[#A68966]" 
                 onChange={(e) => setLoginData({...loginData, user: e.target.value})}
               />
               <input 
                 type="password" placeholder="Password" 
-                className="w-full p-4 rounded-xl border bg-[#FDFBF7] outline-none" 
+                className="w-full p-4 rounded-xl border bg-[#FDFBF7] outline-none focus:ring-2 focus:ring-[#A68966]" 
                 onChange={(e) => setLoginData({...loginData, pass: e.target.value})}
               />
               <button onClick={handleLogin} className="w-full bg-[#4A443F] text-white py-4 rounded-xl font-bold hover:bg-black transition-all">Masuk</button>
@@ -208,20 +208,24 @@ const App = () => {
 
         {isMenuOpen && (
           <div className="absolute top-full left-0 w-full bg-white border-b p-6 shadow-2xl animate-in slide-in-from-top duration-300">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-1">
-                <button onClick={() => {setView('shop'); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><Home size={18}/> Beranda</button>
-                <button onClick={() => {setIsCartOpen(true); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><ShoppingCart size={18}/> Keranjang</button>
-                <button onClick={() => {setView('shop'); setIsMenuOpen(false); document.getElementById('catalog')?.scrollIntoView({behavior:'smooth'})}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><Package size={18}/> Katalog</button>
+                <button onClick={() => {setView('shop'); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><Home size={18}/> Beranda Utama</button>
+                <button onClick={() => {setIsCartOpen(true); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><ShoppingCart size={18}/> Keranjang Pesanan</button>
+                <button onClick={() => {setView('shop'); setIsMenuOpen(false); document.getElementById('catalog')?.scrollIntoView({behavior:'smooth'})}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><Package size={18}/> Katalog Koleksi</button>
                 <a href={`https://wa.me/${profile.phoneNumber}`} target="_blank" rel="noreferrer" className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><Phone size={18}/> Hubungi Kami</a>
               </div>
-              <div className="border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-4">
+              <div className="border-t md:border-t-0 md:border-l pt-6 md:pt-0 md:pl-8 flex flex-col justify-center">
                 {!isLoggedIn ? (
-                  <button onClick={() => {setIsLoginModalOpen(true); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl bg-[#FDFBF7] text-[#A68966] flex items-center gap-3 font-bold border border-[#E8E2D9]"><LogIn size={18}/> Login Admin</button>
+                  <button onClick={() => {setIsLoginModalOpen(true); setIsMenuOpen(false)}} className="w-full p-4 rounded-xl bg-[#FDFBF7] text-[#A68966] flex items-center justify-center gap-3 font-bold border border-[#E8E2D9]"><LogIn size={18}/> Login Admin</button>
                 ) : (
-                  <div className="space-y-2">
-                    <button onClick={() => {setView('admin'); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl bg-[#4A443F] text-white flex items-center gap-3 font-bold"><LayoutDashboard size={18}/> Dashboard</button>
-                    <button onClick={() => {setIsLoggedIn(false); setView('shop')}} className="w-full text-left p-4 rounded-xl text-red-500 flex items-center gap-3 font-bold hover:bg-red-50 transition-all"><LogOut size={18}/> Logout</button>
+                  <div className="space-y-3">
+                    <button onClick={() => {setView('admin'); setIsMenuOpen(false)}} className="w-full p-4 rounded-xl bg-[#4A443F] text-white flex items-center justify-center gap-3 font-bold hover:bg-black transition-all">
+                      <LayoutDashboard size={18}/> Dashboard Kelola
+                    </button>
+                    <button onClick={() => {setIsLoggedIn(false); setView('shop')}} className="w-full p-4 rounded-xl text-red-500 flex items-center justify-center gap-3 font-bold hover:bg-red-50 transition-all">
+                      <LogOut size={18}/> Logout
+                    </button>
                   </div>
                 )}
               </div>
@@ -236,29 +240,33 @@ const App = () => {
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsCartOpen(false)} />
           <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             <div className="p-6 border-b flex justify-between items-center bg-[#FDFBF7]">
-              <h2 className="text-xl font-black text-[#4A443F]">Keranjang Belanja</h2>
-              <button onClick={() => setIsCartOpen(false)}><X size={20}/></button>
+              <h2 className="text-xl font-black text-[#4A443F] flex items-center gap-2">
+                <ShoppingCart className="text-[#A68966]" /> Pesanan Saya
+              </h2>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-[#8B8276] opacity-40">
                   <ShoppingBag size={64} className="mb-4" />
-                  <p>Keranjang kosong</p>
+                  <p className="font-medium text-lg">Keranjang masih kosong</p>
                 </div>
               ) : (
                 cart.map(item => (
-                  <div key={item.id} className="flex gap-4 p-4 bg-[#FDFBF7] rounded-2xl border border-[#E8E2D9]">
-                    <img src={item.image} className="w-16 h-16 rounded-xl object-cover shadow-sm" alt="" />
+                  <div key={item.id} className="flex gap-4 p-4 bg-[#FDFBF7] rounded-2xl border border-[#E8E2D9] shadow-sm">
+                    <img src={item.image} className="w-20 h-20 rounded-xl object-cover shadow-sm" alt={item.name} />
                     <div className="flex-1">
                       <h4 className="font-bold text-sm leading-tight text-[#4A443F]">{item.name}</h4>
                       <p className="text-[#A68966] text-xs font-bold mt-1">{formatIDR(item.discount_price)}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <button onClick={() => setCart(cart.map(x => x.id === item.id ? {...x, qty: Math.max(1, x.qty-1)} : x))} className="w-7 h-7 bg-white border rounded-lg flex items-center justify-center shadow-sm">-</button>
-                        <span className="text-xs font-bold w-4 text-center">{item.qty}</span>
-                        <button onClick={() => setCart(cart.map(x => x.id === item.id ? {...x, qty: x.qty+1} : x))} className="w-7 h-7 bg-white border rounded-lg flex items-center justify-center shadow-sm">+</button>
+                      <div className="flex items-center gap-4 mt-3">
+                        <div className="flex items-center border border-[#E8E2D9] rounded-lg bg-white overflow-hidden">
+                          <button onClick={() => setCart(cart.map(x => x.id === item.id ? {...x, qty: Math.max(1, x.qty-1)} : x))} className="px-2 py-1 hover:bg-gray-50 text-[#A68966] font-bold">-</button>
+                          <span className="px-3 text-xs font-bold text-[#4A443F]">{item.qty}</span>
+                          <button onClick={() => setCart(cart.map(x => x.id === item.id ? {...x, qty: x.qty+1} : x))} className="px-2 py-1 hover:bg-gray-50 text-[#A68966] font-bold">+</button>
+                        </div>
                       </div>
                     </div>
-                    <button onClick={() => setCart(cart.filter(x => x.id !== item.id))} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                    <button onClick={() => setCart(cart.filter(x => x.id !== item.id))} className="text-red-300 hover:text-red-500 self-start p-1 transition-colors"><Trash2 size={16}/></button>
                   </div>
                 ))
               )}
@@ -266,15 +274,15 @@ const App = () => {
             {cart.length > 0 && (
               <div className="p-8 border-t bg-[#FDFBF7]">
                 <div className="flex justify-between mb-6 font-black text-xl text-[#4A443F]">
-                  <span>Total</span>
+                  <span>Total Bayar</span>
                   <span>{formatIDR(cart.reduce((a, b) => a + (b.discount_price * b.qty), 0))}</span>
                 </div>
                 <button 
                   onClick={() => {
                     const text = cart.map(i => `- ${i.name} (x${i.qty})`).join('%0A');
-                    window.open(`https://wa.me/${profile.phoneNumber}?text=Halo ${profile.shopName}, saya ingin pesan produk berikut:%0A${text}%0A%0A*Total Estimasi: ${formatIDR(cart.reduce((a, b) => a + (b.discount_price * b.qty), 0))}*`, '_blank');
+                    window.open(`https://wa.me/${profile.phoneNumber}?text=Halo ${profile.shopName}, saya mau pesan produk berikut:%0A${text}%0A%0A*Total Estimasi: ${formatIDR(cart.reduce((a, b) => a + (b.discount_price * b.qty), 0))}*`, '_blank');
                   }} 
-                  className="w-full bg-[#4A443F] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-black shadow-xl shadow-black/10 transition-all active:scale-95"
+                  className="w-full bg-[#4A443F] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-black/10 active:scale-95"
                 >
                   Pesan via WhatsApp <ArrowRight size={20} />
                 </button>
@@ -284,17 +292,24 @@ const App = () => {
         </div>
       )}
 
-      {/* MAIN VIEW */}
+      {/* MAIN CONTENT */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         
         {view === 'shop' && (
           <div className="space-y-24 animate-in fade-in duration-700">
-            {/* HERO */}
+            {/* Hero Section */}
             <section id="hero" className="rounded-[3rem] bg-white border border-[#E8E2D9] p-10 md:p-20 flex flex-col md:flex-row items-center gap-16 shadow-sm overflow-hidden relative">
               <div className="flex-1 space-y-8 relative z-10">
                 <h2 className="text-5xl md:text-7xl font-black leading-tight text-[#4A443F]">{profile.shopName}</h2>
                 <p className="text-[#8B8276] text-xl leading-relaxed max-w-xl">{profile.description}</p>
-                <button onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} className="bg-[#4A443F] text-white px-10 py-5 rounded-2xl font-bold hover:bg-black hover:scale-105 transition-all shadow-xl shadow-black/10">Lihat Katalog <ChevronRight className="inline ml-2" size={20}/></button>
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <button 
+                    onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} 
+                    className="bg-[#4A443F] text-white px-10 py-5 rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-black/10 flex items-center gap-2"
+                  >
+                    Mulai Belanja Sekarang <ChevronRight size={18} />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10 w-full">
                 {advantages.map(adv => (
@@ -310,14 +325,18 @@ const App = () => {
               <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-[#D9C5B2]/10 rounded-full blur-3xl opacity-50"></div>
             </section>
 
-            {/* KATALOG */}
+            {/* Katalog Section */}
             <section id="catalog" className="space-y-12 scroll-mt-24">
               <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-6 border-b border-[#E8E2D9] pb-10">
-                <h3 className="text-4xl font-black text-[#4A443F]">Produk Pilihan</h3>
+                <div className="text-center md:text-left">
+                  <h3 className="text-4xl font-black text-[#4A443F] mb-2">Katalog Koleksi</h3>
+                  <p className="text-[#8B8276]">Pilihan terbaik untuk melengkapi kebutuhan estetik Anda.</p>
+                </div>
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full">
                   {categories.map(cat => (
                     <button 
-                      key={cat} onClick={() => setSelectedCategory(cat)} 
+                      key={cat} 
+                      onClick={() => setSelectedCategory(cat)} 
                       className={`px-7 py-3 rounded-full text-sm font-bold border transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-[#A68966] text-white border-[#A68966] shadow-lg shadow-[#A68966]/20' : 'bg-white text-[#8B8276] hover:border-[#A68966]'}`}
                     >
                       {cat}
@@ -326,12 +345,17 @@ const App = () => {
                 </div>
               </div>
 
+              {/* Grid Produk */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {filteredProducts.map(p => (
                   <div key={p.id} className="bg-white rounded-[2.5rem] overflow-hidden border border-[#E8E2D9] group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 shadow-sm">
                     <div className="h-64 overflow-hidden relative">
                       <img src={p.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
-                      <span className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black uppercase text-[#A68966] border border-[#E8E2D9] tracking-widest">{p.category}</span>
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black uppercase text-[#A68966] border border-[#E8E2D9] tracking-widest">
+                          {p.category}
+                        </span>
+                      </div>
                     </div>
                     <div className="p-8">
                       <h4 className="font-bold text-xl mb-1 text-[#4A443F] group-hover:text-[#A68966] transition-colors">{p.name}</h4>
@@ -340,8 +364,11 @@ const App = () => {
                         <span className="text-sm text-gray-300 line-through font-bold">{formatIDR(p.original_price)}</span>
                         <span className="text-2xl font-black text-[#4A443F]">{formatIDR(p.discount_price)}</span>
                       </div>
-                      <button onClick={() => addToCart(p)} className="w-full py-4 rounded-2xl bg-[#F3EFE9] text-[#4A443F] hover:bg-[#4A443F] hover:text-white flex items-center justify-center gap-3 font-black transition-all shadow-sm">
-                        <Plus size={20}/> Tambah ke Pesanan
+                      <button 
+                        onClick={() => addToCart(p)} 
+                        className="w-full py-4 rounded-2xl bg-[#F3EFE9] text-[#4A443F] hover:bg-[#4A443F] hover:text-white flex items-center justify-center gap-3 font-black transition-all shadow-sm"
+                      >
+                        <Plus size={20}/> Tambah Pesanan
                       </button>
                     </div>
                   </div>
@@ -349,9 +376,9 @@ const App = () => {
               </div>
             </section>
 
-            {/* TESTIMONI */}
+            {/* Testimoni Section */}
             <section className="bg-[#4A443F] rounded-[3.5rem] p-12 md:p-24 text-white text-center space-y-16 shadow-2xl relative overflow-hidden">
-              <h3 className="text-4xl md:text-5xl font-black mb-4">Kata Mereka</h3>
+              <h3 className="text-4xl md:text-5xl font-black mb-4">Kata Pelanggan Kami</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left mt-20">
                 {testimonials.map(t => (
                   <div key={t.id} className="bg-white/10 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/10 flex flex-col justify-between hover:bg-white/20 transition-all">
@@ -364,6 +391,7 @@ const App = () => {
                     <p className="font-black text-sm tracking-widest uppercase border-t border-white/10 pt-6">— {t.name}</p>
                   </div>
                 ))}
+                {testimonials.length === 0 && <p className="col-span-full text-center opacity-40">Belum ada testimoni terbaru.</p>}
               </div>
               <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl opacity-40"></div>
             </section>
@@ -522,7 +550,7 @@ const App = () => {
                         <input className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none font-black text-xl text-[#4A443F]" value={profile.shopName} onChange={e => setProfile({...profile, shopName: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Nomor WA (Gunakan 62...)</label>
+                        <label className="text-[10px) font-black uppercase text-gray-400 tracking-[0.2em]">Nomor WA (Gunakan 62...)</label>
                         <div className="relative">
                            <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-[#A68966]" size={18}/>
                            <input className="w-full p-5 pl-14 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none font-bold" value={profile.phoneNumber} onChange={e => setProfile({...profile, phoneNumber: e.target.value})} />
