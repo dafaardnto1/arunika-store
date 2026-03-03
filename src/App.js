@@ -3,7 +3,7 @@ import {
   Plus, Trash2, Edit3, Phone, Store,
   X, Filter, ShoppingCart, Package, LayoutDashboard,
   Star, Menu, MessageSquare, Home, LogIn, LogOut, PlusCircle, CheckCircle2,
-  ChevronRight, ArrowRight, MapPin, ShoppingBag, Save, AlertCircle, Info, Tag, Globe, Upload, Loader2
+  ChevronRight, ArrowRight, MapPin, ShoppingBag, Save, AlertCircle, Tag, Globe, Upload, Loader2
 } from 'lucide-react';
 
 // --- KONFIGURASI DATABASE ---
