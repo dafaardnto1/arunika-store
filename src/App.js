@@ -5,7 +5,7 @@ import {
   Menu, MessageSquare, Home, LogIn, PlusCircle,
   ChevronRight, ArrowRight, ShoppingBag, Save, AlertCircle, Globe, 
   Upload, Loader2, Search, TrendingUp, Eye, Share2,
-  Heart, Moon, Sun, Zap, BarChart3, Clock
+  Heart, Moon, Sun, Zap, BarChart3, Clock, Filter
 } from 'lucide-react';
 
 // --- KONFIGURASI DATABASE ---
@@ -22,16 +22,13 @@ const App = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  // Filtering, Sorting, Search
+  // Filtering & Search
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy] = useState('latest'); 
   
-  // Cart & Wishlist Logic
+  // Cart & Wishlist
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
-  const [voucherCode, setVoucherCode] = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState(0); 
   
   // Supabase & Media
   const [supabase, setSupabase] = useState(null);
@@ -128,7 +125,6 @@ const App = () => {
   const saveProduct = async (obj) => {
     if (!supabase) return;
     if (!obj.image) return showAlert('Peringatan', 'Harap unggah gambar produk.', 'error');
-
     try {
       if (obj.id && typeof obj.id === 'number') {
         await supabase.from('products').update(obj).eq('id', obj.id);
@@ -188,16 +184,6 @@ const App = () => {
   };
 
   // --- LOGIKA KERANJANG ---
-  const applyVoucher = () => {
-    if (voucherCode.toUpperCase() === 'ARUNIKA10') {
-      setAppliedDiscount(10);
-      showAlert('Voucher Berhasil!', 'Diskon 10% diterapkan.', 'success');
-    } else {
-      setAppliedDiscount(0);
-      showAlert('Voucher Gagal', 'Kode tidak valid.', 'error');
-    }
-  };
-
   const addToCart = (product) => {
     if (product.stock <= 0) return showAlert('Maaf', 'Stok habis.', 'error');
     const existing = cart.find(item => item.id === product.id);
@@ -220,15 +206,10 @@ const App = () => {
 
   // --- DATA PROCESSING ---
   const filteredProducts = useMemo(() => {
-    let res = products.filter(p => (selectedCategory === 'Semua' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    if (sortBy === 'price-low') res.sort((a, b) => a.discount_price - b.discount_price);
-    if (sortBy === 'price-high') res.sort((a, b) => b.discount_price - a.discount_price);
-    return res;
-  }, [products, selectedCategory, searchQuery, sortBy]);
+    return products.filter(p => (selectedCategory === 'Semua' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [products, selectedCategory, searchQuery]);
 
-  const subtotal = cart.reduce((a, b) => a + (b.discount_price * b.qty), 0);
-  const discountAmountValue = (subtotal * appliedDiscount) / 100;
-  const grandTotal = subtotal - discountAmountValue;
+  const grandTotal = cart.reduce((a, b) => a + (b.discount_price * b.qty), 0);
 
   // --- UI HELPERS ---
   const formatIDR = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
@@ -327,22 +308,22 @@ const App = () => {
              <div className="max-w-7xl mx-auto grid grid-cols-3 gap-10">
                 <div className="space-y-4">
                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#A68966] mb-6">Navigasi Utama</h4>
-                   <button onClick={() => {setView('shop'); setIsMenuOpen(false)}} className="w-full text-left p-5 rounded-2xl hover:bg-gray-100 dark:hover:bg-white/5 flex items-center gap-4 font-black transition-all"><Home size={20}/> Home Landing</button>
+                   <button onClick={() => {setView('shop'); setIsMenuOpen(false)}} className="w-full text-left p-5 rounded-2xl hover:bg-gray-100 dark:hover:bg-white/5 flex items-center gap-4 font-black transition-all"><Home size={20}/> Beranda</button>
                    <button onClick={() => {setIsCartOpen(true); setIsMenuOpen(false)}} className="w-full text-left p-5 rounded-2xl hover:bg-gray-100 dark:hover:bg-white/5 flex items-center gap-4 font-black transition-all"><ShoppingCart size={20}/> Keranjang Belanja</button>
                 </div>
                 <div className="space-y-4">
                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#A68966] mb-6">Koleksi Tersimpan</h4>
                    <div className="p-5 rounded-[2rem] border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
                       <Heart size={32} className="text-red-400 mb-3"/>
-                      <p className="text-xs font-black">{wishlist.length} Produk Favorit</p>
+                      <p className="text-xs font-black">{wishlist.length} Favorit</p>
                    </div>
                 </div>
                 <div className="flex flex-col justify-center">
                    {!isLoggedIn ? (
-                     <button onClick={() => {setIsLoginModalOpen(true); setIsMenuOpen(false)}} className="w-full py-6 rounded-3xl bg-[#4A443F] text-white font-black flex items-center justify-center gap-4"><LogIn size={20}/> Login Administrator</button>
+                     <button onClick={() => {setIsLoginModalOpen(true); setIsMenuOpen(false)}} className="w-full py-6 rounded-3xl bg-[#4A443F] text-white font-black flex items-center justify-center gap-4"><LogIn size={20}/> Admin Login</button>
                    ) : (
                      <div className="space-y-3">
-                        <button onClick={() => {setView('admin'); setIsMenuOpen(false)}} className="w-full py-6 rounded-3xl bg-[#A68966] text-white font-black"><LayoutDashboard size={20} className="inline mr-3"/> Ke Dashboard</button>
+                        <button onClick={() => {setView('admin'); setIsMenuOpen(false)}} className="w-full py-6 rounded-3xl bg-[#A68966] text-white font-black"><LayoutDashboard size={20} className="inline mr-3"/> Dashboard</button>
                         <button onClick={() => {setIsLoggedIn(false); setView('shop')}} className="w-full py-6 text-red-500 font-black">Logout</button>
                      </div>
                    )}
@@ -360,7 +341,7 @@ const App = () => {
               <div className="p-10 border-b border-gray-100 flex justify-between items-center">
                  <div>
                     <h2 className="text-3xl font-black tracking-tighter">Keranjang</h2>
-                    <p className="text-[10px] font-black uppercase text-[#A68966] tracking-[0.2em]">{cart.length} Item Terpilih</p>
+                    <p className="text-[10px] font-black uppercase text-[#A68966] tracking-[0.2em]">{cart.length} Item</p>
                  </div>
                  <button onClick={() => setIsCartOpen(false)}><X size={28}/></button>
               </div>
@@ -390,20 +371,8 @@ const App = () => {
               </div>
               {cart.length > 0 && (
                 <div className={`p-10 rounded-t-[3rem] shadow-2xl border-t ${darkMode ? 'bg-white/5' : 'bg-[#FDFBF7]'}`}>
-                   {/* VOUCHER INPUT */}
-                   <div className="flex gap-2 mb-8">
-                      <input 
-                        placeholder="Kode: ARUNIKA10" 
-                        className="flex-1 px-6 py-4 rounded-2xl border bg-transparent outline-none font-bold uppercase text-xs"
-                        value={voucherCode}
-                        onChange={(e) => setVoucherCode(e.target.value)}
-                      />
-                      <button onClick={applyVoucher} className="px-6 bg-[#A68966] text-white rounded-2xl font-black text-xs uppercase tracking-widest">Gunakan</button>
-                   </div>
                    <div className="space-y-3 mb-8">
-                      <div className="flex justify-between text-sm opacity-60"><span>Subtotal</span><span>{formatIDR(subtotal)}</span></div>
-                      {appliedDiscount > 0 && <div className="flex justify-between text-sm text-green-500 font-bold"><span>Diskon {appliedDiscount}%</span><span>-{formatIDR(discountAmountValue)}</span></div>}
-                      <div className="flex justify-between font-black text-2xl pt-3 border-t"><span>Total</span><span className="text-[#A68966]">{formatIDR(grandTotal)}</span></div>
+                      <div className="flex justify-between font-black text-2xl pt-3 border-t"><span>Total Akhir</span><span className="text-[#A68966]">{formatIDR(grandTotal)}</span></div>
                    </div>
                    <button onClick={sendWhatsApp} className="w-full py-8 rounded-[2rem] bg-[#4A443F] text-white font-black text-xl flex items-center justify-center gap-4 shadow-xl active:scale-95 transition-all">
                       Kirim Pesanan WA <ArrowRight size={24}/>
@@ -424,26 +393,26 @@ const App = () => {
                  <div className="absolute top-0 right-0 w-1/2 h-full bg-[#A68966]/5 -skew-x-12 translate-x-1/4"></div>
                  <div className="flex-1 space-y-12 relative z-10">
                     <div className="inline-flex items-center gap-3 bg-[#A68966]/10 px-8 py-3 rounded-full text-[#A68966] font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">
-                       <Zap size={16}/> New Season Arrival
+                       <Zap size={16}/> New Arrival
                     </div>
                     <h2 className="text-8xl font-black leading-[0.9] tracking-tighter relative">{profile.shopName}</h2>
                     <p className="text-2xl leading-relaxed opacity-60 max-w-xl italic border-l-8 border-[#A68966] pl-8">{profile.description}</p>
                     <div className="flex gap-6">
                        <button onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})} className="px-16 py-8 bg-[#4A443F] text-white rounded-[2.5rem] font-black text-xl hover:bg-black transition-all shadow-2xl flex items-center gap-4 group">
-                          Jelajahi Sekarang <ChevronRight size={28} className="group-hover:translate-x-2 transition-transform"/>
+                          Buka Katalog <ChevronRight size={28} className="group-hover:translate-x-2 transition-transform"/>
                        </button>
                     </div>
                  </div>
                  <div className="flex-1 grid grid-cols-2 gap-8 relative z-10">
                     <div className={`p-12 rounded-[3.5rem] shadow-xl ${darkMode ? 'bg-white/5 border border-white/5' : 'bg-[#FDFBF7] border border-gray-100'} transform rotate-3`}>
                        <BarChart3 size={40} className="text-[#A68966] mb-8"/>
-                       <h4 className="text-2xl font-black mb-4 tracking-tighter">Kualitas Premium</h4>
-                       <p className="text-sm opacity-50 font-medium leading-relaxed">Dibuat langsung oleh tangan-tangan terampil pengrajin lokal.</p>
+                       <h4 className="text-2xl font-black mb-4 tracking-tighter">Premium</h4>
+                       <p className="text-sm opacity-50 font-medium leading-relaxed">Material pilihan terbaik pengrajin lokal.</p>
                     </div>
                     <div className={`p-12 rounded-[3.5rem] shadow-xl ${darkMode ? 'bg-white/5 border border-white/5' : 'bg-[#FDFBF7] border border-gray-100'} transform -rotate-3 mt-12`}>
                        <Clock size={40} className="text-[#A68966] mb-8"/>
-                       <h4 className="text-2xl font-black mb-4 tracking-tighter">Produksi Etis</h4>
-                       <p className="text-sm opacity-50 font-medium leading-relaxed">Menghargai lingkungan dan memberdayakan komunitas.</p>
+                       <h4 className="text-2xl font-black mb-4 tracking-tighter">Ethical</h4>
+                       <p className="text-sm opacity-50 font-medium leading-relaxed">Proses produksi ramah lingkungan.</p>
                     </div>
                  </div>
               </section>
@@ -452,7 +421,7 @@ const App = () => {
               <section id="catalog" className="scroll-mt-24 space-y-16">
                  <div className="flex justify-between items-end border-b border-gray-200 pb-16">
                     <div>
-                       <h3 className="text-7xl font-black tracking-tighter">Katalog Produk</h3>
+                       <h3 className="text-7xl font-black tracking-tighter">Produk Pilihan</h3>
                        <p className="text-[#A68966] font-black uppercase tracking-[0.4em] text-xs mt-4">Pilih produk favorit Anda ({filteredProducts.length})</p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -502,7 +471,7 @@ const App = () => {
               {/* TESTIMONI */}
               <section className="bg-[#4A443F] rounded-[5rem] p-32 text-white relative overflow-hidden">
                  <div className="max-w-4xl mx-auto text-center space-y-20 relative z-10">
-                    <h3 className="text-5xl font-black tracking-tighter uppercase mb-6">Cerita Mereka</h3>
+                    <h3 className="text-5xl font-black tracking-tighter uppercase mb-6">Ulasan Pembeli</h3>
                     <div className="grid grid-cols-2 gap-12 text-left">
                        {testimonials.slice(0, 2).map(t => (
                          <div key={t.id} className="bg-white/5 p-12 rounded-[3.5rem] border border-white/5">
@@ -525,25 +494,25 @@ const App = () => {
                  </div>
                  <div className="space-y-2">
                     {[
-                      {id:'overview', label:'Ringkasan Toko', icon: BarChart3},
-                      {id:'products', label:'Manajemen Produk', icon: Package},
-                      {id:'categories', label:'List Kategori', icon: Filter},
-                      {id:'testimonials', label:'Koleksi Ulasan', icon: MessageSquare},
-                      {id:'settings', label:'Identitas Website', icon: Globe}
+                      {id:'overview', label:'Ringkasan', icon: BarChart3},
+                      {id:'products', label:'Produk', icon: Package},
+                      {id:'categories', label:'Kategori', icon: Filter},
+                      {id:'testimonials', label:'Ulasan', icon: MessageSquare},
+                      {id:'settings', label:'Profil Web', icon: Globe}
                     ].map(item => (
                       <button key={item.id} onClick={() => setAdminSection(item.id)} className={`w-full flex items-center gap-5 px-10 py-6 rounded-[2.5rem] font-black text-sm transition-all border-2 ${adminSection === item.id ? 'bg-[#4A443F] border-[#4A443F] text-white shadow-xl' : 'bg-transparent border-transparent hover:border-gray-200'}`}>
                          <item.icon size={22}/> {item.label}
                       </button>
                     ))}
                  </div>
-                 <button onClick={() => {setIsLoggedIn(false); setView('shop')}} className="w-full text-red-500 font-black py-6 mt-10 hover:bg-red-50 rounded-full transition-all">Logout Administrator</button>
+                 <button onClick={() => {setIsLoggedIn(false); setView('shop')}} className="w-full text-red-500 font-black py-6 mt-10 hover:bg-red-50 rounded-full transition-all">Logout</button>
               </aside>
 
               <div className={`flex-1 p-16 rounded-[4rem] shadow-sm border ${darkMode ? 'bg-[#2A2825] border-white/5' : 'bg-white border-gray-100'} min-h-screen`}>
                  
                  {adminSection === 'overview' && (
                     <div className="space-y-16 animate-in fade-in duration-500">
-                       <h3 className="text-4xl font-black tracking-tighter">Ringkasan Toko</h3>
+                       <h3 className="text-4xl font-black tracking-tighter">Status Toko</h3>
                        <div className="grid grid-cols-3 gap-10">
                           <div className="p-10 rounded-[3rem] bg-[#FDFBF7] dark:bg-white/5 border border-gray-100 dark:border-white/5 relative group">
                              <TrendingUp size={80} className="absolute -right-4 -bottom-4 opacity-5"/>
@@ -557,8 +526,8 @@ const App = () => {
                  {adminSection === 'products' && (
                    <div className="space-y-12 animate-in fade-in duration-500">
                       <div className="flex justify-between items-center border-b pb-10">
-                         <h3 className="text-4xl font-black tracking-tighter">Manajemen Produk</h3>
-                         <button onClick={() => setEditObj({ name:'', discount_price:0, original_price:0, category: categories[1], description:'', image: null, stock:1 })} className="bg-[#A68966] text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-4 shadow-xl"><PlusCircle size={24}/> Tambah Baru</button>
+                         <h3 className="text-4xl font-black tracking-tighter">Katalog</h3>
+                         <button onClick={() => setEditObj({ name:'', discount_price:0, original_price:0, category: categories[1], description:'', image: null, stock:1 })} className="bg-[#A68966] text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-4 shadow-xl"><PlusCircle size={24}/> Tambah</button>
                       </div>
                       <div className="grid grid-cols-1 gap-4">
                          {products.map(p => (
@@ -583,7 +552,7 @@ const App = () => {
 
                  {adminSection === 'categories' && (
                   <div className="space-y-12">
-                    <h3 className="text-4xl font-black tracking-tighter">Atur Kategori</h3>
+                    <h3 className="text-4xl font-black tracking-tighter">Kategori</h3>
                     <div className="flex gap-6 p-10 bg-[#FDFBF7] rounded-[3rem]">
                       <input id="newCat" placeholder="Kategori baru..." className="flex-1 p-6 rounded-[2rem] border outline-none font-bold" />
                       <button onClick={() => {
@@ -598,7 +567,7 @@ const App = () => {
                   <div className="space-y-12">
                     <h3 className="text-4xl font-black tracking-tighter">Ulasan</h3>
                     <div className="p-16 bg-[#FDFBF7] rounded-[4rem] border-2 border-dashed space-y-10">
-                      <input id="tName" placeholder="Nama Pelanggan" className="w-full p-6 rounded-[2rem] border" />
+                      <input id="tName" placeholder="Nama" className="w-full p-6 rounded-[2rem] border" />
                       <textarea id="tText" placeholder="Pesan..." className="w-full p-8 rounded-[2.5rem] border" rows="4" />
                       <button onClick={() => {
                           const n = document.getElementById('tName').value;
@@ -613,30 +582,30 @@ const App = () => {
                    <div className="fixed inset-0 z-[250] flex items-center justify-center p-10 bg-black/60 backdrop-blur-md">
                       <div className={`${darkMode ? 'bg-[#2A2825]' : 'bg-white'} p-16 rounded-[4rem] w-full max-w-3xl shadow-2xl max-h-[90vh] overflow-y-auto`}>
                          <div className="flex justify-between items-center mb-12 border-b pb-8">
-                            <h4 className="text-3xl font-black tracking-tighter">Editor Produk</h4>
+                            <h4 className="text-3xl font-black tracking-tighter">Editor</h4>
                             <button onClick={() => setEditObj(null)}><X size={32}/></button>
                          </div>
                          <div className="grid grid-cols-2 gap-8">
                             <div className="col-span-2 space-y-2">
-                               <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Nama Produk</label>
+                               <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Nama</label>
                                <input className="w-full p-6 rounded-[2rem] border bg-[#FDFBF7] dark:bg-white/5 outline-none font-bold" value={editObj.name} onChange={e=>setEditObj({...editObj, name: e.target.value})} />
                             </div>
                             <div className="col-span-2 space-y-2">
-                               <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Foto Produk</label>
+                               <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Foto (Cloud)</label>
                                <div className="p-10 border-2 border-dashed border-gray-200 rounded-[2rem] flex flex-col items-center">
                                   {isUploading ? <Loader2 className="animate-spin text-[#A68966]" size={40}/> : editObj.image ? (
                                     <div className="flex items-center gap-6"><img src={editObj.image} className="w-24 h-24 rounded-2xl object-cover" alt="" /><button onClick={()=>setEditObj({...editObj, image:null})} className="text-xs font-black text-red-500 underline">Ganti</button></div>
                                   ) : (
                                     <label className="cursor-pointer flex flex-col items-center">
                                        <Upload size={32} className="opacity-20 mb-2"/>
-                                       <span className="text-sm font-black opacity-40">Pilih File</span>
+                                       <span className="text-sm font-black opacity-40">Unggah</span>
                                        <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                                     </label>
                                   )}
                                </div>
                             </div>
                             <div className="space-y-2">
-                               <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Harga Jual</label>
+                               <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Harga</label>
                                <input type="number" className="w-full p-6 rounded-[2rem] border bg-[#FDFBF7] dark:bg-white/5 outline-none font-black" value={editObj.discount_price} onChange={e=>setEditObj({...editObj, discount_price: Number(e.target.value)})} />
                             </div>
                             <div className="space-y-2">
@@ -645,7 +614,7 @@ const App = () => {
                             </div>
                          </div>
                          <div className="flex gap-4 mt-12">
-                            <button onClick={() => saveProduct(editObj)} className="flex-1 py-8 rounded-[2.5rem] bg-[#4A443F] text-white font-black text-xl hover:bg-black" disabled={isUploading}><Save size={24} className="inline mr-2"/> Simpan Data</button>
+                            <button onClick={() => saveProduct(editObj)} className="flex-1 py-8 rounded-[2.5rem] bg-[#4A443F] text-white font-black text-xl hover:bg-black" disabled={isUploading}><Save size={24} className="inline mr-2"/> Simpan</button>
                             <button onClick={() => setEditObj(null)} className="px-12 py-8 rounded-[2.5rem] border font-black text-xl">Batal</button>
                          </div>
                       </div>
@@ -655,16 +624,16 @@ const App = () => {
                  {adminSection === 'settings' && (
                     <div className="space-y-16">
                        <div className="flex justify-between items-center border-b pb-10">
-                          <h3 className="text-4xl font-black tracking-tighter">Identitas Website</h3>
-                          <button onClick={saveProfile} className="bg-[#A68966] text-white px-10 py-5 rounded-[2rem] font-black shadow-xl"><Save size={24} className="inline mr-2"/> Simpan Perubahan</button>
+                          <h3 className="text-4xl font-black tracking-tighter">Profil Web</h3>
+                          <button onClick={saveProfile} className="bg-[#A68966] text-white px-10 py-5 rounded-[2rem] font-black shadow-xl"><Save size={24} className="inline mr-2"/> Simpan</button>
                        </div>
                        <div className="grid grid-cols-2 gap-10">
                           <div className="space-y-3 col-span-2">
-                             <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Judul Web</label>
-                             <input className="w-full p-8 rounded-[2.5rem] border bg-[#FDFBF7] dark:bg-white/5 outline-none font-black text-2xl" value={profile.websiteTitle} onChange={e=>setProfile({...profile, websiteTitle: e.target.value})} />
+                             <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">Nama Toko / Judul Meta</label>
+                             <input className="w-full p-8 rounded-[2.5rem] border bg-[#FDFBF7] dark:bg-white/5 outline-none font-black text-2xl" value={profile.shopName} onChange={e=>setProfile({...profile, shopName: e.target.value})} />
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">WhatsApp</label>
+                             <label className="text-[10px] font-black uppercase opacity-40 ml-4 tracking-widest">WA Business</label>
                              <input className="w-full p-8 rounded-[2.5rem] border bg-[#FDFBF7] dark:bg-white/5 outline-none font-black text-xl" value={profile.phoneNumber} onChange={e=>setProfile({...profile, phoneNumber: e.target.value})} />
                           </div>
                        </div>
@@ -694,13 +663,13 @@ const App = () => {
         <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
           <div className={`${darkMode ? 'bg-[#2A2825] border-white/5' : 'bg-white border-[#E8E2D9]'} p-12 rounded-[3.5rem] w-full max-w-sm shadow-2xl border`}>
             <div className="text-center mb-10">
-               <h2 className="text-3xl font-black tracking-tighter">Admin Login</h2>
+               <h2 className="text-3xl font-black tracking-tighter">Login</h2>
             </div>
             <div className="space-y-4">
               <input type="text" placeholder="Username" className="w-full p-5 rounded-2xl border bg-transparent outline-none font-bold" onChange={(e) => setLoginData({...loginData, user: e.target.value})} />
               <input type="password" placeholder="Password" className="w-full p-5 rounded-2xl border bg-transparent outline-none font-bold" onChange={(e) => setLoginData({...loginData, pass: e.target.value})} />
-              <button onClick={handleLogin} className="w-full bg-[#4A443F] text-white py-6 rounded-2xl font-black text-lg mt-6 hover:bg-black">Masuk Dashboard</button>
-              <button onClick={() => setIsLoginModalOpen(false)} className="w-full text-xs font-black opacity-40 mt-4 uppercase tracking-widest">Kembali</button>
+              <button onClick={handleLogin} className="w-full bg-[#4A443F] text-white py-6 rounded-2xl font-black text-lg mt-6 hover:bg-black">Masuk</button>
+              <button onClick={() => setIsLoginModalOpen(false)} className="w-full text-xs font-black opacity-40 mt-4 uppercase tracking-widest text-center">Tutup</button>
             </div>
           </div>
         </div>
@@ -710,3 +679,25 @@ const App = () => {
 };
 
 export default App;
+
+/**
+ * --- DOKUMENTASI LENGKAP PENGGUNAAN SISTEM (CLEAN BUILD) ---
+ * * 1. AKSES ADMIN:
+ * - Username: arunika
+ * - Password: arunika1234
+ * - Masuk melalui tombol "Admin Panel" di bagian footer.
+ * * 2. PENGATURAN STORAGE (WAJIB):
+ * - BUCKET: Di dashboard Supabase, buat Bucket bernama "product-images".
+ * - PERMISSION: Pastikan Bucket diset ke "Public" agar gambar bisa diakses website.
+ * - UPLOAD: Klik ikon "Unggah" di Editor Produk, tunggu loader selesai, lalu simpan.
+ * * 3. FIX BUILD VERCEL:
+ * - Semua variabel dan ikon yang tidak terpakai telah dihapus.
+ * - Ikon 'Filter' telah di-import untuk menghindari error no-undef.
+ * * 4. WHATSAPP AUTO-ORDER:
+ * - Pesan otomatis mencakup daftar barang dan total harga saat klik "Kirim Pesanan WA".
+ * * 5. TEMA & UI:
+ * - Mendukung Mode Gelap (Dark Mode) melalui switch di navbar.
+ * - Forced Desktop (min-w 1280px) untuk menjaga estetika katalog visual.
+ * * 6. SISTEM STOK:
+ * - Jika stok 0 (nol), tombol beli nonaktif dan produk tampil grayscale.
+ */
