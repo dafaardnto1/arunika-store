@@ -3,7 +3,7 @@ import {
   Plus, Settings, Trash2, Edit3, Phone, Store,
   X, Filter, ShoppingCart, Package, LayoutDashboard,
   Star, Menu, MessageSquare, Home, LogIn, LogOut, PlusCircle,
-  ChevronRight, ArrowRight, MapPin, ShoppingBag, Save
+  ChevronRight, ArrowRight, MapPin, ShoppingBag, Save, Upload, Loader2
 } from 'lucide-react';
 
 // --- KONFIGURASI DATABASE ---
@@ -21,6 +21,7 @@ const App = () => {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [cart, setCart] = useState([]);
   const [supabase, setSupabase] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // State Penyimpanan Data
   const [profile, setProfile] = useState({ 
@@ -78,6 +79,39 @@ const App = () => {
   useEffect(() => {
     if (supabase) fetchData();
   }, [supabase, fetchData]);
+
+  // --- FUNGSI UPLOAD GAMBAR KE STORAGE ---
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !supabase) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      // Upload file ke bucket 'product-images'
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Ambil Public URL
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setEditObj({ ...editObj, image: data.publicUrl });
+      alert("Gambar berhasil diupload!");
+    } catch (error) {
+      console.error('Error upload:', error.message);
+      alert("Gagal upload gambar. Pastikan bucket 'product-images' sudah dibuat dan diset Public.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // --- FUNGSI ADMIN ---
   const saveProduct = async (obj) => {
@@ -208,7 +242,7 @@ const App = () => {
 
         {isMenuOpen && (
           <div className="absolute top-full left-0 w-full bg-white border-b p-6 shadow-2xl animate-in slide-in-from-top duration-300">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <button onClick={() => {setView('shop'); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><Home size={18}/> Beranda Utama</button>
                 <button onClick={() => {setIsCartOpen(true); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl hover:bg-[#FDFBF7] flex items-center gap-3 font-bold transition-all"><ShoppingCart size={18}/> Keranjang Pesanan</button>
@@ -461,7 +495,7 @@ const App = () => {
                       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                         <div className="bg-white p-10 rounded-[3rem] w-full max-w-2xl shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
                           <h4 className="text-2xl font-black mb-8 border-b pb-6 text-[#4A443F]">Data Katalog</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <input className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] md:col-span-2 outline-none" placeholder="Nama Produk" value={editObj.name} onChange={e=>setEditObj({...editObj, name: e.target.value})} />
                             <input type="number" className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none" placeholder="Harga Jual" value={editObj.discount_price} onChange={e=>setEditObj({...editObj, discount_price: Number(e.target.value)})} />
                             <input type="number" className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none" placeholder="Harga Dicoret" value={editObj.original_price} onChange={e=>setEditObj({...editObj, original_price: Number(e.target.value)})} />
@@ -469,7 +503,29 @@ const App = () => {
                                 {categories.filter(c => c !== 'Semua').map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                             <input type="number" className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none" placeholder="Stok" value={editObj.stock} onChange={e=>setEditObj({...editObj, stock: Number(e.target.value)})} />
-                            <input className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] md:col-span-2 outline-none" placeholder="URL Gambar" value={editObj.image} onChange={e=>setEditObj({...editObj, image: e.target.value})} />
+                            
+                            {/* BAGIAN UPLOAD FOTO */}
+                            <div className="md:col-span-2 space-y-3">
+                              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Foto Produk</label>
+                              <div className="flex flex-col sm:flex-row gap-4 items-center p-6 bg-[#FDFBF7] border-2 border-dashed border-[#E8E2D9] rounded-2xl">
+                                {editObj.image ? (
+                                  <img src={editObj.image} className="w-24 h-24 object-cover rounded-xl shadow-md" alt="Preview" />
+                                ) : (
+                                  <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center text-gray-300">
+                                    <ShoppingBag size={32} />
+                                  </div>
+                                )}
+                                <div className="flex-1 space-y-3 w-full">
+                                  <label className={`w-full flex items-center justify-center gap-3 py-3 px-6 rounded-xl font-bold cursor-pointer transition-all ${isUploading ? 'bg-gray-100 text-gray-400' : 'bg-[#A68966] text-white hover:bg-[#8B7356]'}`}>
+                                    {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+                                    {isUploading ? 'Sedang Mengunggah...' : 'Pilih File Gambar'}
+                                    <input type="file" className="hidden" accept="image/*" disabled={isUploading} onChange={handleFileUpload} />
+                                  </label>
+                                  <p className="text-[10px] text-gray-400 text-center sm:text-left italic">Pilih file gambar langsung dari komputer/HP Anda.</p>
+                                </div>
+                              </div>
+                            </div>
+
                             <textarea rows="3" className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] md:col-span-2 outline-none resize-none" placeholder="Deskripsi" value={editObj.description} onChange={e=>setEditObj({...editObj, description: e.target.value})} />
                           </div>
                           <div className="flex gap-4 mt-12">
@@ -550,7 +606,7 @@ const App = () => {
                         <input className="w-full p-5 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none font-black text-xl text-[#4A443F]" value={profile.shopName} onChange={e => setProfile({...profile, shopName: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px) font-black uppercase text-gray-400 tracking-[0.2em]">Nomor WA (Gunakan 62...)</label>
+                        <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Nomor WA (Gunakan 62...)</label>
                         <div className="relative">
                            <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-[#A68966]" size={18}/>
                            <input className="w-full p-5 pl-14 rounded-2xl border border-[#E8E2D9] bg-[#FDFBF7] outline-none font-bold" value={profile.phoneNumber} onChange={e => setProfile({...profile, phoneNumber: e.target.value})} />
