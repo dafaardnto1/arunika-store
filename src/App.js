@@ -220,7 +220,7 @@ const App = () => {
                   <button onClick={() => {setIsLoginModalOpen(true); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl bg-[#FDFBF7] text-[#A68966] flex items-center gap-3 font-bold border border-[#E8E2D9]"><LogIn size={18}/> Login Admin</button>
                 ) : (
                   <div className="space-y-2">
-                    <button onClick={() => {setView('admin'); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl bg-[#4A443F] text-white flex items-center gap-3 font-bold"><LayoutDashboard size={18}/> Dashboard</button>
+                    <button onClick={() => {setView('arunika123'); setIsMenuOpen(false)}} className="w-full text-left p-4 rounded-xl bg-[#4A443F] text-white flex items-center gap-3 font-bold"><LayoutDashboard size={18}/> Dashboard</button>
                     <button onClick={() => {setIsLoggedIn(false); setView('shop')}} className="w-full text-left p-4 rounded-xl text-red-500 flex items-center gap-3 font-bold hover:bg-red-50 transition-all"><LogOut size={18}/> Logout</button>
                   </div>
                 )}
