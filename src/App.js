@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  Plus, Settings, Trash2, Edit3, Phone, Store,
+  Plus, Trash2, Edit3, Phone, Store,
   X, Filter, ShoppingCart, Package, LayoutDashboard,
   Star, Menu, MessageSquare, Home, LogIn, LogOut, PlusCircle, CheckCircle2,
   ChevronRight, ArrowRight, MapPin, ShoppingBag, Save, AlertCircle, Info, Tag, Globe, Upload, Loader2
@@ -26,7 +26,7 @@ const App = () => {
   // Custom Modal State
   const [modal, setModal] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null });
 
-  // State Penyimpanan Data (Default jika DB kosong)
+  // State Penyimpanan Data
   const [profile, setProfile] = useState({ 
     shopName: 'Arunika Craft & Co', 
     phoneNumber: '6281234567890', 
@@ -46,7 +46,7 @@ const App = () => {
   const [editObj, setEditObj] = useState(null);
   const [loginData, setLoginData] = useState({ user: '', pass: '' });
 
-  // --- SINKRONISASI METADATA WEBSITE (FAVICON & TITLE) ---
+  // --- SINKRONISASI METADATA WEBSITE ---
   useEffect(() => {
     document.title = profile.websiteTitle || profile.shopName;
     const link = document.querySelector("link[rel~='icon']");
@@ -60,16 +60,16 @@ const App = () => {
     }
   }, [profile.websiteTitle, profile.faviconUrl, profile.shopName]);
 
-  // --- POPUP HANDLER (CUSTOM MODAL) ---
-  const showAlert = (title, message, type = 'info') => {
+  // --- POPUP HANDLER ---
+  const showAlert = useCallback((title, message, type = 'info') => {
     setModal({ show: true, title, message, type, onConfirm: null });
-  };
+  }, []);
 
-  const showConfirm = (title, message, onConfirm) => {
+  const showConfirm = useCallback((title, message, onConfirm) => {
     setModal({ show: true, title, message, type: 'confirm', onConfirm });
-  };
+  }, []);
 
-  // --- MEMUAT SUPABASE CLIENT ---
+  // --- MEMUAT SUPABASE ---
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
@@ -83,7 +83,7 @@ const App = () => {
     document.head.appendChild(script);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!supabase) return;
     try {
       const { data: p } = await supabase.from('products').select('*').order('id', { ascending: false });
@@ -93,20 +93,23 @@ const App = () => {
       if (t) setTestimonials(t);
 
       const { data: pr } = await supabase.from('profile').select('*').eq('id', 1).single();
-      if (pr) setProfile({
-        shopName: pr.shop_name,
-        phoneNumber: pr.phone_number,
-        description: pr.description,
-        address: pr.address,
-        websiteTitle: pr.website_title || profile.websiteTitle,
-        faviconUrl: pr.favicon_url || profile.faviconUrl
-      });
+      if (pr) {
+        setProfile(prev => ({
+          ...prev,
+          shopName: pr.shop_name,
+          phoneNumber: pr.phone_number,
+          description: pr.description,
+          address: pr.address,
+          websiteTitle: pr.website_title || prev.websiteTitle,
+          faviconUrl: pr.favicon_url || prev.faviconUrl
+        }));
+      }
     } catch (err) { console.error("Error fetching data:", err); }
-  };
+  }, [supabase]);
 
-  useEffect(() => { if (supabase) fetchData(); }, [supabase]);
+  useEffect(() => { if (supabase) fetchData(); }, [supabase, fetchData]);
 
-  // --- LOGIKA UPLOAD GAMBAR KE SUPABASE STORAGE (BUCKET: product-images) ---
+  // --- LOGIKA UPLOAD GAMBAR ---
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file || !supabase) return;
@@ -117,7 +120,7 @@ const App = () => {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `uploads/${fileName}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('product-images')
         .upload(filePath, file);
 
@@ -127,11 +130,11 @@ const App = () => {
         .from('product-images')
         .getPublicUrl(filePath);
 
-      setEditObj({ ...editObj, image: publicUrl });
+      setEditObj(prev => ({ ...prev, image: publicUrl }));
       showAlert('Berhasil', 'Gambar telah terunggah ke penyimpanan.', 'success');
     } catch (err) {
       console.error('Upload error:', err);
-      showAlert('Gagal Upload', 'Periksa apakah bucket "product-images" sudah ada dan diatur ke Public di Supabase.', 'error');
+      showAlert('Gagal Upload', 'Pastikan bucket "product-images" sudah ada dan diatur ke Public di Supabase.', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -355,7 +358,7 @@ const App = () => {
               ) : (
                 cart.map(item => (
                   <div key={item.id} className="flex gap-5 p-4 bg-[#FDFBF7] rounded-[2rem] border border-[#E8E2D9] group transition-all hover:border-[#A68966] shadow-sm">
-                    <img src={item.image} className="w-16 h-16 rounded-xl object-cover shadow-md" alt="" />
+                    <img src={item.image} className="w-16 h-16 rounded-xl object-cover shadow-md" alt={`Produk ${item.name}`} />
                     <div className="flex-1">
                       <h4 className="font-black text-sm text-[#4A443F]">{item.name}</h4>
                       <p className="text-[#A68966] text-xs font-black mt-1">{formatIDR(item.discount_price)}</p>
@@ -390,7 +393,7 @@ const App = () => {
         
         {view === 'shop' && (
           <div className="space-y-32 animate-in fade-in duration-1000">
-            {/* HERO - BEAUTIFIED */}
+            {/* HERO */}
             <section id="hero" className="rounded-[4rem] bg-white border border-[#E8E2D9] p-24 flex items-center gap-24 shadow-sm overflow-hidden relative">
               <div className="absolute top-0 right-0 w-1/2 h-full bg-[#F3EFE9]/30 -skew-x-12 translate-x-1/4 border-l border-[#E8E2D9]/30"></div>
               
@@ -476,7 +479,7 @@ const App = () => {
               </div>
             </section>
 
-            {/* TESTIMONI - COMPACT */}
+            {/* TESTIMONI */}
             <section className="bg-[#4A443F] rounded-[5rem] p-24 text-white text-center space-y-16 shadow-2xl relative overflow-hidden">
               <div className="relative z-10">
                 <h3 className="text-4xl font-black mb-4 tracking-tighter uppercase">Apa Kata Pembeli?</h3>
@@ -538,7 +541,7 @@ const App = () => {
                     <div className="grid grid-cols-1 gap-4">
                       {products.map(p => (
                         <div key={p.id} className="flex items-center gap-10 p-8 bg-[#FDFBF7] rounded-[3rem] border border-transparent hover:border-[#A68966] transition-all group shadow-sm">
-                          <img src={p.image} className="w-24 h-24 rounded-[1.5rem] object-cover shadow-lg" alt="" />
+                          <img src={p.image} className="w-24 h-24 rounded-[1.5rem] object-cover shadow-lg" alt={`Thumb ${p.name}`} />
                           <div className="flex-1">
                             <h4 className="font-black text-xl text-[#4A443F]">{p.name}</h4>
                             <p className="font-black text-[#A68966] text-lg">{formatIDR(p.discount_price)}</p>
@@ -564,7 +567,6 @@ const App = () => {
                                <input className="w-full p-6 rounded-[2rem] border border-[#E8E2D9] bg-[#FDFBF7] outline-none font-bold text-lg" value={editObj.name} onChange={e=>setEditObj({...editObj, name: e.target.value})} />
                             </div>
                             
-                            {/* SUPABASE STORAGE UPLOAD (BUCKET: product-images) */}
                             <div className="col-span-2 space-y-2">
                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-[0.2em]">Foto Produk (Unggah ke Supabase)</label>
                                <div className="flex items-center gap-6 p-6 border-2 border-dashed border-[#E8E2D9] rounded-[2rem] bg-[#FDFBF7]">
@@ -574,7 +576,7 @@ const App = () => {
                                     </div>
                                   ) : editObj.image ? (
                                     <div className="flex items-center gap-6">
-                                      <img src={editObj.image} className="w-24 h-24 rounded-2xl object-cover shadow-md" alt="Preview" />
+                                      <img src={editObj.image} className="w-24 h-24 rounded-2xl object-cover shadow-md" alt="Preview Unggah" />
                                       <button onClick={() => setEditObj({...editObj, image: null})} className="text-xs font-black text-red-500 uppercase underline">Hapus & Ganti</button>
                                     </div>
                                   ) : (
